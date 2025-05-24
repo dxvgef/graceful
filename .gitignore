@@ -1,0 +1,5 @@
+.idea
+*.iml
+bin
+go.sum
+.DS_Store
