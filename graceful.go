@@ -73,7 +73,7 @@ func Start(cfg *Config) {
 		if cfg.Logger != nil && cfg.WaitDoneMessage != "" {
 			cfg.Logger.Output(cfg.WaitDoneMessage)
 		}
-	case <-time.After(cfg.WaitTimeout * time.Second):
+	case <-time.After(cfg.WaitTimeout):
 		if cfg.Logger != nil && cfg.WaitTimeoutMessage != "" {
 			// 超时退出
 			cfg.Logger.Output(cfg.WaitTimeoutMessage)

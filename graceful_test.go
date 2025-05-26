@@ -45,7 +45,7 @@ func TestGraceful(t *testing.T) {
 	// 阻塞启动退出监听，并设置等待协议超时的时间
 	Start(&Config{
 		Logger:             logger,
-		WaitTimeout:        10,
+		WaitTimeout:        5 * time.Second,
 		WaitingMessage:     "pending coroutine shutdown",
 		WaitDoneMessage:    "all coroutines have exited",
 		WaitTimeoutMessage: "wait timed out",
