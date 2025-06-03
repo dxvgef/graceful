@@ -47,7 +47,14 @@ func Exit(sig os.Signal) {
 // Start 开始监听信号
 func Start(cfg *Config) {
 	// 监听终止信号
-	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signalChannel,
+		syscall.SIGINT,  // Ctrl+C（终端中断）
+		syscall.SIGTERM, // 优雅终止（kill 默认信号）
+		syscall.SIGHUP,  // 终端关闭（如用户登出）
+		syscall.SIGQUIT, // 终端退出（带 core dump）
+		syscall.SIGUSR1, // 用户自定义信号1（常用于重载配置）
+		syscall.SIGUSR2, // 用户自定义信号2（常用于热重启）
+	)
 
 	// 阻塞等待信号
 	<-signalChannel
