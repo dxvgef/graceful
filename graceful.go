@@ -34,9 +34,14 @@ func WaitGroup() *sync.WaitGroup {
 	return &wg
 }
 
-// Context 获取 main 上下文
+// Context 获取 mainContext
 func Context() context.Context {
 	return mainContext
+}
+
+// Cancel 执行 mainCancel，关闭所有监听了 mainContext 的协程，但不会退出进程
+func Cancel() {
+	mainCancel()
 }
 
 // Exit 手动发出退出信号
@@ -46,20 +51,32 @@ func Exit(sig os.Signal) {
 
 // Start 开始监听信号
 func Start(cfg *Config) {
-	// 监听终止信号
-	signal.Notify(signalChannel, syscall.SIGINT, syscall.SIGTERM)
+	signal.Notify(signalChannel,
+		syscall.SIGINT,  // Ctrl+C
+		syscall.SIGTERM, // 系统终止信号
+		syscall.SIGHUP,  // 重启或重新加载配置
+		syscall.SIGQUIT, // 退出并生成core dump
+		syscall.SIGUSR1, // 用户自定义信号1
+		syscall.SIGUSR2, // 用户自定义信号2
+	)
 
-	// 阻塞等待信号
+	// 阻塞等待退出信号
 	<-signalChannel
-
-	// 向所有监听了 mainContext 的协程发送取消信号
+	// 向所有监听了 mainContext 的协程发出取消信号
 	mainCancel()
+
+	// select {
+	// case <-signalChannel: // 退出信号
+	// 	mainCancel()
+	// 	break
+	// case <-mainContext.Done(): // 取消信号
+	// 	break
+	// }
 
 	if cfg.Logger != nil && cfg.WaitingMessage != "" {
 		cfg.Logger.Output(cfg.WaitingMessage)
 	}
 
-	// 监听wg的通道
 	waitChannel := make(chan struct{}, 1)
 	go func() {
 		// 阻塞等待所有协程关闭
@@ -69,13 +86,12 @@ func Start(cfg *Config) {
 	}()
 
 	select {
-	case <-waitChannel:
+	case <-waitChannel: // 所有协程已关闭
 		if cfg.Logger != nil && cfg.WaitDoneMessage != "" {
 			cfg.Logger.Output(cfg.WaitDoneMessage)
 		}
-	case <-time.After(cfg.WaitTimeout * time.Second):
+	case <-time.After(cfg.WaitTimeout * time.Second): // 超时退出
 		if cfg.Logger != nil && cfg.WaitTimeoutMessage != "" {
-			// 超时退出
 			cfg.Logger.Output(cfg.WaitTimeoutMessage)
 		}
 	}

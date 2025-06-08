@@ -1,21 +1,19 @@
 package graceful
 
 import (
-	"io"
-	"log"
+	"testing"
 )
 
 type testLogger struct {
-	stdLog *log.Logger
+	t *testing.T
 }
 
-func testNewLogger(out io.Writer, prefix string, flag int) *testLogger {
-	l := log.New(out, prefix, flag)
+func testNewLogger(t *testing.T) *testLogger {
 	return &testLogger{
-		stdLog: l,
+		t: t,
 	}
 }
 
-func (l *testLogger) Output(v ...interface{}) {
-	l.stdLog.Println(v...)
+func (tl *testLogger) Output(msg any) {
+	tl.t.Log(msg)
 }
